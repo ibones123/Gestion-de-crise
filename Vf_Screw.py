@@ -122,27 +122,30 @@ plt.title("Courbe Précision-Rappel")
 plt.legend()
 plt.show()
 
-# ✅ Correction : Récupérer les vraies clés pour Precision et Recall
-precision_key = [k for k in history.history.keys() if 'precision' in k][0]
-recall_key = [k for k in history.history.keys() if 'recall' in k][0]
+# ✅ Récupération dynamique des clés pour Precision et Recall
+precision_key = [k for k in history.history.keys() if 'precision' in k and 'val' not in k][0]
+recall_key = [k for k in history.history.keys() if 'recall' in k and 'val' not in k]
+val_precision_key = f"val_{precision_key}"
+val_recall_key = f"val_{recall_key[0]}" if recall_key else None
 
-# ✅ Création des graphiques des métriques
+# ✅ Création des graphiques Train vs Validation
 metrics = {
-    "Loss": history.history['loss'], 
-    "Accuracy": history.history['accuracy'], 
-    "Precision": history.history[precision_key], 
-    "Recall": history.history[recall_key], 
-    "F1-score": [f1] * len(history.history['accuracy'])  # F1-score constant
+    "Loss": ("loss", "val_loss"),
+    "Accuracy": ("accuracy", "val_accuracy"),
+    "Precision": (precision_key, val_precision_key),
+    "Recall": (recall_key[0], val_recall_key) if recall_key else None
 }
 
-plt.figure(figsize=(12, 6))
-for i, (metric, values) in enumerate(metrics.items()):
-    plt.subplot(2, 3, i+1)
-    plt.plot(values, label=f'Train {metric}')
-    plt.xlabel("Époques")
-    plt.ylabel(metric)
-    plt.legend()
-    plt.title(f"Évolution de {metric}")
+plt.figure(figsize=(12, 8))
+for i, (metric, (train_key, val_key)) in enumerate(metrics.items()):
+    if train_key in history.history and val_key in history.history:
+        plt.subplot(2, 2, i + 1)
+        plt.plot(history.history[train_key], label=f'Train {metric}', linestyle='-')
+        plt.plot(history.history[val_key], label=f'Validation {metric}', linestyle='--')
+        plt.xlabel("Époques")
+        plt.ylabel(metric)
+        plt.legend()
+        plt.title(f"Évolution de {metric} (Train vs Validation)")
 
 plt.tight_layout()
 plt.show()
